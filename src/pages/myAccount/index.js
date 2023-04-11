@@ -2,7 +2,7 @@ import MyAccountLayout from "./components/MyAccountLayout/myAccountLayout";
 import RootLayout from "@/components/RootLayout/rootLayout";
 import { withAuth } from "@/utils/withAuth";
 
-const MyAccount = ({user}) => {
+const MyAccount = () => {
     return <RootLayout>
     <MyAccountLayout>
         <h1>My Account</h1>

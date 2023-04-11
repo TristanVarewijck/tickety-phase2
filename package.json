@@ -8,9 +8,11 @@
     "start": "next start",
     "lint": "next lint",
     "preview": "firebase hosting:channel:deploy preview",
-    "deploy": "firebase deploy"
+    "deploy": "firebase deploy",
+    "extension": "firebase deploy --only extensions"
   },
   "dependencies": {
+    "eslint": "^8.37.0",
     "firebase": "^9.19.1",
     "firebase-auth": "^0.1.2",
     "force": "^0.0.3",

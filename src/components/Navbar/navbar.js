@@ -3,6 +3,8 @@ import Link from "next/link";
 import { withAuth } from "@/utils/withAuth";
 
 const Navbar = ({user}) => {
+    const userIsAdmin =  user && JSON.parse(user.reloadUserInfo.customAttributes).admin;
+
     return <nav style={styles.navbar}>
         <ul style={styles.listContainer}>
             <li><Link href="/"><p>Home</p></Link></li>
@@ -17,6 +19,10 @@ const Navbar = ({user}) => {
                  </div>
                 }     
             </li>
+            {
+            userIsAdmin &&  <li><Link href="/admin"><p>Admin</p></Link></li>
+            }
+           
           
         </ul>
     </nav>

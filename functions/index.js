@@ -4,10 +4,10 @@ admin.initializeApp();
 const cors = require('cors')({origin: true});
 const puppeteer = require("puppeteer-extra");
 const StealthPlugin = require('puppeteer-extra-plugin-stealth'); 
-const RecaptchaPlugin = require('puppeteer-extra-plugin-recaptcha')
+const RecaptchaPlugin = require('puppeteer-extra-plugin-recaptcha');
 const {executablePath} = require('puppeteer'); 
 var userAgent = require('user-agents');
-
+const WelcomeMail = require("./emailTemplates/welcomeMail");
 
 // puppeteer middleware
 puppeteer.use(StealthPlugin()); 
@@ -16,7 +16,7 @@ visualFeedback: true}))
 
 // for bot testing
 // const test = 'http://bot.sannysoft.com';
-exports.crawlWithPuppeteer = functions .runWith({
+exports.crawlWithPuppeteer = functions.runWith({
   timeoutSeconds: 300,
   memory: "1GB",
 }).https.onRequest((req, res) => {
@@ -113,20 +113,68 @@ exports.crawlWithPuppeteer = functions .runWith({
   });
 });    
 
-exports.onCreateUser = functions.auth.user().onCreate(async (user) => {
+exports.onCreateUser = functions.auth.user().onCreate(async (context) => {
+  // create and save new user document data in firestore
   try {
     const userData = {
-      uid: user.uid,
-      provider: user.providerData[0].providerId,
-      displayName: user.displayName,
-      email: user.email,
-      photoUrl: user.photoURL 
+      uid: context.uid,
+      provider: context.providerData[0].providerId,
+      displayName: context.displayName,
+      email: context.email,
+      photoUrl: context.photoURL,
+      admin: false, 
     };
 
-    await admin.firestore().collection('users').doc(user.uid).set(userData);
+    await admin.firestore().collection('users').doc(context.uid).set(userData);
+
   } catch (error) {
-    console.error(error);
+    functions.logger.error(error); 
+    throw new Error('Something went wrong with making a user document. Error Message: ', error.message); 
+  }
+
+  try {
+      // make / send a welcomes email after subscribing
+      const welcomeEmailTemplate = {
+        to: context.email, 
+        message: {
+          subject: "Welcome to The Goodlife Guide", 
+          html: WelcomeMail,
+        }
+      }
+      
+      await admin.firestore().collection('mail').doc(context.uid).set(welcomeEmailTemplate);
+    
+  } catch (error) {
+    functions.logger.error(error); 
+    throw new Error('Something went wrong with sending email. Error Message: ', error.message);  
   }
 });
+
+exports.updateAdminCustomClaim = functions.firestore.document('users/{userId}')
+  .onUpdate((change, context) => {
+    const newValue = change.after.data();
+    const previousValue = change.before.data();
+    
+    if (newValue.admin !== previousValue.admin) {
+      const userId = context.params.userId;
+
+      try {
+        admin.auth().revokeRefreshTokens(userId); 
+        functions.logger.info('User session revoked');
+        
+      } catch (error) {
+        functions.logger.error(error); 
+        throw new Error('Error revoking user session: ', e.message);  
+      }
+
+      if (newValue.admin) {
+        return admin.auth().setCustomUserClaims(userId, { admin: true });
+      } else {
+        return admin.auth().setCustomUserClaims(userId, { admin: false });
+      }
+    } else {
+      return null;
+    }
+  });
 
 

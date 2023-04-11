@@ -1,5 +1,13 @@
 {
   "projects": {
     "default": "tickety-85fd7"
+  },
+  "targets": {},
+  "etags": {
+    "tickety-85fd7": {
+      "extensionInstances": {
+        "firestore-send-email": "af5802f50d484d276d6ab1e6981460ea971ca06897bbf834c577af965a58185d"
+      }
+    }
   }
 }
